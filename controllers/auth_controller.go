@@ -169,3 +169,53 @@ func SendVerificationEmail(ctx *fiber.Ctx) error {
 		"message": "OTP code has been sent to email",
 	})
 }
+
+func VerifyEmail(ctx *fiber.Ctx) error {
+	// Parse request body
+	req := new(request.VerifyEmailRequest)
+	if err := ctx.BodyParser(req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid request body",
+			"error":   err.Error(),
+		})
+	}
+
+	// Check if user exists
+	var user entity.User
+	err := database.DB.Where("email = ?", req.Email).First(&user).Error
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid email or password",
+			"error":   "User not found",
+		})
+	}
+
+	// Check if OTP is valid
+	if user.OTP == nil || *user.OTP != req.OTP || time.Now().After(*user.OTPExpiresAt) {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Invalid OTP code",
+		})
+	}
+
+	// Update user's email verification status
+	err = database.DB.Model(&user).Updates(map[string]interface{}{
+		"email_verified_at": time.Now(),
+		"otp":               nil,
+		"otp_expires_at":    nil,
+	}).Error
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"message": "Failed to verify email",
+			"error":   err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Email has been verified",
+	})
+}

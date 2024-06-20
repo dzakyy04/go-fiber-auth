@@ -5,7 +5,6 @@ import (
 	"go-fiber-auth/models/entity"
 	"go-fiber-auth/models/request"
 	"go-fiber-auth/utils"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -222,26 +221,14 @@ func VerifyEmail(ctx *fiber.Ctx) error {
 }
 
 func GetMyData(ctx *fiber.Ctx) error {
-	// Get user_id claims from context
-	userID := ctx.Locals("user_id")
-	log.Println(userID)
+	// Get user data claims from context
+	user := ctx.Locals("user").(*entity.User)
 
-	if userID == nil {
+	if user == nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"success": false,
 			"message": "Unauthorized",
-			"error":   "User ID not found in context",
-		})
-	}
-
-	// Find user from database
-	var user entity.User
-	err := database.DB.First(&user, userID).Error
-	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"success": false,
-			"message": "User not found",
-			"error":   err.Error(),
+			"error":   "User not found in context",
 		})
 	}
 

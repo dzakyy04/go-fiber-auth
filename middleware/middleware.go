@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"go-fiber-auth/database"
+	"go-fiber-auth/models/entity"
 	"os"
 	"strings"
 
@@ -75,7 +77,18 @@ func AuthMiddleware(ctx *fiber.Ctx) error {
 		})
 	}
 
-	// Save user_id into context
-	ctx.Locals("user_id", uint(userID))
+	// Find user from database
+	var user entity.User
+	err = database.DB.First(&user, userID).Error
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"success": false,
+			"message": "User not found",
+			"error":   err.Error(),
+		})
+	}
+
+	// Save user data into context
+	ctx.Locals("user", &user)
 	return ctx.Next()
 }

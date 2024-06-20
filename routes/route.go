@@ -17,5 +17,5 @@ func RouteInit(route *fiber.App) {
 	route.Post("/api/login", controllers.Login)
 	route.Post("/api/email-verification", controllers.SendVerificationEmail)
 	route.Post("/api/verify-email", controllers.VerifyEmail)
-	route.Get("/api/me", middleware.AuthMiddleware, controllers.GetMyData)
+	route.Get("/api/me", middleware.AuthMiddleware, middleware.VerifiedMiddleware, controllers.GetMyData)
 }

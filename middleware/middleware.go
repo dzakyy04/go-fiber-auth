@@ -92,3 +92,27 @@ func AuthMiddleware(ctx *fiber.Ctx) error {
 	ctx.Locals("user", &user)
 	return ctx.Next()
 }
+
+func VerifiedMiddleware(ctx *fiber.Ctx) error {
+	// Get user data from context
+	user := ctx.Locals("user").(*entity.User)
+
+	if user == nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Unauthorized",
+			"error":   "User not found in context",
+		})
+	}
+
+	// Check if user is verified
+	if user.EmailVerifiedAt == nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"success": false,
+			"message": "Unauthorized",
+			"error":   "User is not verified",
+		})
+	}
+
+	return ctx.Next()
+}
